@@ -4,7 +4,7 @@
                 "38C0FB895F58EBB85BE505C175341884"
             ],
     "actions": [{"time": 1, 
-                 "code": "Q",
+                 "code": "O",
                  "client_id": "1"
             },
             {"time": 2, 
@@ -17,11 +17,11 @@
             },
             {"time": 4, 
                 "code": "Q",
-                "client_id": "67ECEEBA8F192AB5B5A82D4E5D5F6C55"
+                "content_id": "67ECEEBA8F192AB5B5A82D4E5D5F6C55"
             },
             {"time": 5, 
                 "code": "Q",
-                "client_id": "169B99391095B46CB63DEB35D5D8CA84"
+                "content_id": "169B99391095B46CB63DEB35D5D8CA84"
             },
             {"time": 6, 
                 "code": "L"

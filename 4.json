@@ -3,10 +3,7 @@
     "content": ["169B99391095B46CB63DEB35D5D8CA84",
                 "22DBEBE20E41F0126DFFE3782061377B"
             ],
-    "actions": [{"time": 1, 
-                 "code": "I"
-            },
-            {"time": 2, 
+    "actions": [{"time": 2, 
                 "code": "Q",
                 "content_id": "8D855316386C8C79497FE10F92007BBC"
             },

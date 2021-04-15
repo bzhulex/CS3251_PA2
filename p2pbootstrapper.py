@@ -13,6 +13,13 @@ class p2pbootstrapper:
 
         self.boots_socket = None
         self.clients = None  # None for now, will get updates as clients register
+        
+        #code added by Anna Gardner
+        self.boots_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.boots_socket.bind(ip, port)
+        self.start_listening()
+        #end of code added by Anna
+
 
     def start_listening(self):
         ##############################################################################
@@ -22,9 +29,18 @@ class p2pbootstrapper:
         #        You will need to link each connecting client to a new thread (using #
         #        client_thread function below) to handle the requested action.       #
         ##############################################################################
-        pass
 
-    def client_thread(self):
+        #code added by Anna Gardner
+        self.boots_socket.listen()
+        while True:
+            # accept connections from outside
+            (clientsocket, address) = self.boots_socket.accept()
+            # now do something with the clientsocket
+            # in this case, we'll pretend this is a threaded server
+            self.client_thread(clientsocket, address)
+        #end of code added by Anna
+
+    def client_thread(self, clientsocket, address):
         ##############################################################################
         # TODO:  This function should handle the incoming connection requests from   #
         #        clients. You are free to add more arguments to this function based  #
@@ -33,7 +49,10 @@ class p2pbootstrapper:
         #        action needs to be done. For example, if the client wants to        #
         #        deregister, call self.deregister_client                             #
         ##############################################################################
+
+        #code added by Anna Gardner
         pass
+        #end of code added by Anna
 
     def register_client(self, client_id, ip, port):  
         ##############################################################################

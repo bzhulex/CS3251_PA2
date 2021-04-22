@@ -19,6 +19,12 @@ if __name__ == "__main__":
     #        the p2pclient below                                                 #
     ##############################################################################
 
+    with open('/1.json') as f:
+        client_3 = json.load(f)
+
+    content = client_3['content']
+    actions = client_3['actions']
+
     client = p2pclient(client_id=3, content=content, actions=actions)
 
     ##############################################################################
@@ -31,7 +37,7 @@ if __name__ == "__main__":
     ##############################################################################
     # TODO: For step 4: call clients.start_listening()                           #
     ##############################################################################
-
+    client.start_listening()
     ##############################################################################
     # For step 5: the bootstrapper will call the start() on this client, which  #
     # will make this client start taking its actions.                            #

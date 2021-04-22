@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # TODO:  Read the content and actions from 3.json, and feed it into the constructor of   #
     #        the p2pclient below                                                 #
     ##############################################################################
-
+    #Brian's Code
     with open('/1.json') as f:
         client_3 = json.load(f)
 

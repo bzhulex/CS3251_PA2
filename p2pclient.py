@@ -48,6 +48,7 @@ Obtain list of clients from Bootstrapper: (L)
 import socket
 import time
 import json
+from enum import Enum
 
 class p2pclient:
     def __init__(self, client_id, content, actions):
@@ -57,9 +58,9 @@ class p2pclient:
         #       into the constructor                                                 #
         ##############################################################################
 
-        self.client_id = None
-        self.content = None
-        self.actions = None  # this list of actions that the client needs to execute
+        self.client_id = client_id
+        self.content = content
+        self.actions = actions  # this list of actions that the client needs to execute
 
         self.content_originator_list = None  # This needs to be kept None here, it will be built eventually
 
@@ -71,14 +72,17 @@ class p2pclient:
         #        https://docs.python.org/3/howto/sockets.html on how to do this.     #
         ##############################################################################
 
-        self.socket = None
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        random.seed(client_id)
+        port = random.randint(9000, 9999)
+        self.socket.bind((socket.gethostname()), port)
 
         ##############################################################################
         # TODO:  Register with the bootstrapper by calling the 'register' function   #
         #        Make sure you communicate the server                                #
         #        port that this client is running on to the bootstrapper.            #
         ##############################################################################
-
+        self.register()
         
         ##############################################################################
         # TODO:  You can set status variable based on the status of the client:      #
@@ -88,7 +92,12 @@ class p2pclient:
         #        Feel free to add more states if you need to                         #
         #        HINT: You may find enum datatype useful                             #
         ##############################################################################
-        self.status = None
+        class Status(Enum):
+            INITIAL = 0
+            REGISTERED = 1
+            UNREGISTERED = 2
+
+        self.status = Status.REGISTERED
 
         # 'log' variable is used to record the series of events that happen on the client
         # Empty list for now, update as we take actions
@@ -147,7 +156,10 @@ class p2pclient:
         # this is what the autograder is looking for. Python’s json package should   #
         # come handy.                                                                #
         ##############################################################################
-        pass
+        str = "client_"+str(client_id)+".json"
+        with open(str, "w") as outfile:
+            json.dump(self.log), outfile
+        
 
     def query_bootstrapper_all_clients(self):
         ##############################################################################

@@ -87,4 +87,5 @@ class p2pbootstrapper:
         # TODO:  Start timer for all clients so clients can start performing their   #
         #        actions                                                             #
         ##############################################################################
-        pass
+        for client in self.clients:
+            client.start()

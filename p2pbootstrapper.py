@@ -4,6 +4,9 @@ that you might require, feel free to add more if needed. Hints are provided in s
 can be used, others are left to user discretion, make sure that what you are returning from one method gets correctly
 interpreted on the other end. 
 """
+import socket
+import threading
+
 class p2pbootstrapper:
     def __init__(self, ip='127.0.0.1', port=8888):
         ##############################################################################
@@ -34,13 +37,13 @@ class p2pbootstrapper:
         self.boots_socket.listen()
         while True:
             # accept connections from outside
-            (clientsocket, address) = self.boots_socket.accept()
-            # now do something with the clientsocket
-            # in this case, we'll pretend this is a threaded server
-            self.client_thread(clientsocket, address)
+            (clientsocket, (ip, port)) = self.boots_socket.accept()
+
+            #SOS idk how to start a thread rip.... but a new thread needs to be created here
+            self.thread.client_thread(clientsocket, ip, port)
         #end of code added by Anna
 
-    def client_thread(self, clientsocket, address):
+    def client_thread(self, clientsocket, ip, port):
         ##############################################################################
         # TODO:  This function should handle the incoming connection requests from   #
         #        clients. You are free to add more arguments to this function based  #
@@ -51,26 +54,33 @@ class p2pbootstrapper:
         ##############################################################################
 
         #code added by Anna Gardner
-        pass
+        self.register_client(clientsocket, ip, port)
+        while True:
+            data = self.boots_socket.recv()
+            if data == 'deregister':
+                #here compare if string sent indicates that client wants to disconnect
+                self.deregister_client(clientsocket, ip, port)
+            else :
+               self.return_client(clientsocket)
         #end of code added by Anna
 
     def register_client(self, client_id, ip, port):  
         ##############################################################################
         # TODO:  Add client to self.clients                                          #
         ##############################################################################
-        pass
+        self.clients.append(client_id)
 
     def deregister_client(self, client_id):
         ##############################################################################
         # TODO:  Delete client from self.clients                                     #
         ##############################################################################
-        pass
+        self.clients.remove(client_id)
 
     def return_clients(self):
         ##############################################################################
         # TODO:  Return self.clients                                                 #
         ##############################################################################
-        pass
+        self.boots_socket.send(self.clients)
 
     def start(self):
         ##############################################################################

@@ -59,19 +59,21 @@ class p2pbootstrapper:
         ##############################################################################
 
         #code added by Anna Gardner
-        self.register_client(clientsocket, ip, port)
+        clientsocket.send(pickle.dumps(clientsocket))
         while True :
             data = clientsocket.recv()
             if data :
                 receivedClientRequest = int.from_bytes(sys.byteorder)
-                if receivedClientRequest == 1 :
+                if receivedClientRequest == 2 :
                 #here compare if string sent indicates that client wants to disconnect
                     self.deregister_client(clientsocket)
-                elif receivedClientRequest == 2 :
+                elif receivedClientRequest == 1 :
                     self.register_client(clientsocket, ip, port)
                 elif receivedClientRequest == 3:
                     binaryClientDict = pickle.dumps(self.return_clients)
                     clientsocket.send(binaryClientDict)
+                elif receivedClientRequest == 4:
+                    clientsocket.close()
         
         #end of code added by Anna
 
@@ -99,5 +101,5 @@ class p2pbootstrapper:
         #        actions                                                             #
         ##############################################################################
         for client in self.clients:
-            client.send('start')
+            client.start()
 

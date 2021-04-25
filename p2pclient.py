@@ -49,7 +49,13 @@ import socket
 import time
 import json
 from enum import Enum
+import random
+import pickle
 
+class Status(Enum):
+            INITIAL = 0
+            REGISTERED = 1
+            UNREGISTERED = 2
 class p2pclient:
     def __init__(self, client_id, content, actions):
         
@@ -82,6 +88,7 @@ class p2pclient:
         #        Make sure you communicate the server                                #
         #        port that this client is running on to the bootstrapper.            #
         ##############################################################################
+        self.status = Status.INITIAL
         self.register()
         
         ##############################################################################
@@ -92,10 +99,6 @@ class p2pclient:
         #        Feel free to add more states if you need to                         #
         #        HINT: You may find enum datatype useful                             #
         ##############################################################################
-        class Status(Enum):
-            INITIAL = 0
-            REGISTERED = 1
-            UNREGISTERED = 2
 
         self.status = Status.REGISTERED
 
@@ -132,14 +135,19 @@ class p2pclient:
         #        port that this client is running on to the bootstrapper.            #
         #        Append an entry to self.log that registration is successful         #
         ##############################################################################
-        pass
+        if self.status == Status.INITIAL:
+            clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            clientsocket.connect((ip, port))
+            data = pickle.loads(clientsocket.recv())
+
+        clientsocket.send(1)
 
     def deregister(self, ip='127.0.0.1', port=8888):
         ##############################################################################
         # TODO:  Deregister with the bootstrapper                                    #
         #        Append an entry to self.log that deregistration is successful       #
         ##############################################################################
-        pass
+        clientsocket.send(2)
 
     def start(self):
         ##############################################################################
@@ -156,8 +164,8 @@ class p2pclient:
         # this is what the autograder is looking for. Python’s json package should   #
         # come handy.                                                                #
         ##############################################################################
-        str = "client_"+str(client_id)+".json"
-        with open(str, "w") as outfile:
+        string = "client_" + str(self.client_id) + ".json"
+        with open(string, "w") as outfile:
             json.dump(self.log), outfile
         
 

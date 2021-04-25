@@ -68,6 +68,7 @@ class p2pclient:
         self.client_id = client_id
         self.content = content
         self.actions = actions  # this list of actions that the client needs to execute
+        self.knownClients = {}
 
         self.curr_time = 1
 
@@ -146,6 +147,8 @@ class p2pclient:
                     clientsocket.send(pickle.dumps(self.return_list_of_known_clients()))
                 elif data == 'contentList' :
                     clientsocket.send(pickle.dumps(self.return_content_list()))
+            #might not need to close
+            clientsocket.close()
 
     def register(self, ip='127.0.0.1', port=8888):
         ##############################################################################
@@ -154,20 +157,20 @@ class p2pclient:
         #        Append an entry to self.log that registration is successful         #
         ##############################################################################
         if self.status == Status.INITIAL:
-            clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            clientsocket.connect((ip, port))
-            data = pickle.loads(clientsocket.recv())
-            self.client_id = data
+            self.bootstrapperSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.bootstrapperSocket.connect((ip, port))
+            #data = pickle.loads(clientsocket.recv())
+            #self.client_id = data
             self.log[time] = "REGISTER"
 
-        self.socket.send(pickle.dump('register'))
+        self.bootstrapperSocket.send(pickle.dump('register'))
 
     def deregister(self, ip='127.0.0.1', port=8888):
         ##############################################################################
         # TODO:  Deregister with the bootstrapper                                    #
         #        Append an entry to self.log that deregistration is successful       #
         ##############################################################################
-        self.socket.send(pickle.dump('deregister'))
+        self.bootstrapperSocket.send(pickle.dump('deregister'))
 
     def start(self):
         ##############################################################################
@@ -186,13 +189,14 @@ class p2pclient:
         ##############################################################################
         
         for act in self.actions:
+            
             self.log[act] = time
             time.sleep(1)
             self.curr_time += 1
 
         string = "client_" + str(self.client_id) + ".json"
         with open(string, "w") as outfile:
-            json.dump(self.actions), outfile
+            json.dumps(self.actions), outfile
         
 
     def query_bootstrapper_all_clients(self):
@@ -201,15 +205,21 @@ class p2pclient:
         #        registered clients.                                                 #
         #        Append an entry to self.log                                         #
         ##############################################################################
-        self.client_id.send(pickle.dump('sendList'))
-        return self.client_id.recv(pickle.load()).copy()
+        self.bootstrapperSocket.send(pickle.dump('sendList'))
+        return self.bootstrapperSocket.recv(pickle.load()).copy()
 
     def query_client_for_known_client(self, client_id):
         ##############################################################################
         # TODO:  Connect to the client and get the list of clients it knows          #
         #        Append an entry to self.log                                         #
         ##############################################################################
-        client_id.send(pickle.dump('knownClientsPlease'))
+        (ip, port) = self.knownClients.get(client_id)
+        clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        clientSocket.connect((ip, port))
+        clientSocket.send(pickle.dump('knownClientsPlease'))
+        knownClientsDict = clientSocket.recv(pickle.load())
+        return knownClientsDict
+
 
     def return_list_of_known_clients(self):
         ##############################################################################
@@ -217,22 +227,26 @@ class p2pclient:
         #        HINT: You could make a set of <IP, Port> from self.content_originator_list #
         #        and return it.                                                      #
         ##############################################################################
-        pass
+        return self.knownClients.copy()
 
     def query_client_for_content_list(self, client_id):
-        content_list = None
         ##############################################################################
         # TODO:  Connect to the client and get the list of content it has            #
         #        Append an entry to self.log                                         #
         ##############################################################################
-        client_id.send(pickle.dump('contentList'))
+        (ip, port) = self.knownClients.get(client_id)
+        clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        clientSocket.connect((ip, port))
+        clientSocket.send(pickle.dump('contentList'))
+        knownContentList = clientSocket.recv(pickle.load())
+        return knownContentList
 
 
     def return_content_list(self):
         ##############################################################################
         # TODO:  Return the content list that you have (self.content)                #
         ##############################################################################
-        pass
+        return self.content_originator_list.copy()
 
     def request_content(self, content_id):
         #####################################################################################################
@@ -250,11 +264,35 @@ class p2pclient:
         #        their responses(hints, if present) appropriately in the self.content_originator_list       #
         #        Append an entry to self.log that content is obtained                                       #
         #####################################################################################################
-        pass
+        bootstrapperClients = self.query_bootstrapper_all_clients()
+        for client in bootstrapperClients:
+            self.knownClients.update({client, bootstrapperClients.get(client)})
+        for client in bootstrapperClients:
+            clientContentList = self.query_client_for_content_list(client)
+            for content in clientContentList:
+                if content == content_id:
+                    self.content.append(content_id)
+                    self.content_originator_list.update({content_id: self.knownClients.get(client)})
+                    return
+        for client in bootstrapperClients:
+            clientKnownContacts = self.query_client_for_known_client(client)
+            for clientclient in clientKnownContacts:
+                if self.knownClients.get(client) == None :
+                    self.knownClients.update({clientclient: clientKnownContacts.get(clientclient)})
+                    clientclientContentList = self.query_client_for_content_list(clientclient)
+                    for contentboi in clientclientContentList:
+                        if contentboi == content_id:
+                            self.content.append(content_id)
+                            self.content_originator_list.update({content_id: self.knownClients.get(clientclient)})
+                            return
+
+
+        
+
 
     def purge_content(self, content_id):
         #####################################################################################################
         # TODO:  Delete the content from your content list                                                  #
         #        Append an entry to self.log that content is purged                                         #
         #####################################################################################################
-        pass
+        self.content.remove(content_id)

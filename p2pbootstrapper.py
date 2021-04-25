@@ -9,7 +9,7 @@ import threading
 import sys
 import pickle
 
-#TODO: mutex lock self.clients dict since multiple threads access it
+#TODO: mutex lock self.clients and client counter for race conditions dict since multiple threads access it
 
 class p2pbootstrapper:
     def __init__(self, ip='127.0.0.1', port=8888):
@@ -20,6 +20,7 @@ class p2pbootstrapper:
 
         self.boots_socket = None
         self.clients = {}  # None for now, will get updates as clients register
+        self.client_id_counter = 0
         self.clients_lock = threading.Lock()
         
         #code added by Anna Gardner
@@ -48,7 +49,7 @@ class p2pbootstrapper:
             clientThread.start()
         #end of code added by Anna
 
-    def client_thread(self, clientsocket, ip, port):
+    def client_thread(self, clientsocket, client_id, ip, port):
         ##############################################################################
         # TODO:  This function should handle the incoming connection requests from   #
         #        clients. You are free to add more arguments to this function based  #
@@ -59,7 +60,7 @@ class p2pbootstrapper:
         ##############################################################################
 
         #code added by Anna Gardner
-        clientsocket.send(pickle.dumps(clientsocket))
+        #clientsocket.send(pickle.dumps(clientsocket))
         while True :
             data = pickle.load(clientsocket.recv())
             if data :
@@ -67,10 +68,15 @@ class p2pbootstrapper:
                 #here compare if string sent indicates that client wants to disconnect
                     self.deregister_client(clientsocket)
                 elif data == 'register' :
-                    self.register_client(clientsocket, ip, port)
+                    self.register_client(client_id, ip, port)
                 elif data == 'sendList':
-                    binaryClientDict = pickle.dumps(self.return_clients)
-                    clientsocket.send(binaryClientDict)
+                    clientDict = self.return_clients
+                    if len(clientDict) > 0 :
+                        binaryClientDict = pickle.dumps()
+                        clientsocket.send(binaryClientDict)
+                    else: 
+                        #this should send nothing i think based on piazza posts
+                        clientsocket.send(binaryClientDict)
                 elif data == 'endThread':
                     clientsocket.close()
         
@@ -80,7 +86,8 @@ class p2pbootstrapper:
         ##############################################################################
         # TODO:  Add client to self.clients                                          #
         ##############################################################################
-        self.clients.update({client_id : (ip, port)})
+        self.client_id_counter += 1
+        self.clients.update({client_id: (ip, port)})
 
     def deregister_client(self, client_id):
         ##############################################################################

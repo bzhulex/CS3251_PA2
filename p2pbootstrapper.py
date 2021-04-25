@@ -20,7 +20,6 @@ class p2pbootstrapper:
 
         self.boots_socket = None
         self.clients = {}  # None for now, will get updates as clients register
-        self.client_id_counter = 0
         self.mutex = threading.Lock()
         
         #code added by Anna Gardner
@@ -49,7 +48,7 @@ class p2pbootstrapper:
             clientThread.start()
         #end of code added by Anna
 
-    def client_thread(self, clientsocket, client_id, ip, port):
+    def client_thread(self, clientsocket, ip, port):
         ##############################################################################
         # TODO:  This function should handle the incoming connection requests from   #
         #        clients. You are free to add more arguments to this function based  #
@@ -68,6 +67,7 @@ class p2pbootstrapper:
                 #here compare if string sent indicates that client wants to disconnect
                     self.deregister_client(clientsocket)
                 elif data == 'register' :
+                    client_id = pickle.load(clientsocket.recv())
                     self.register_client(client_id, ip, port)
                 elif data == 'sendList':
                     clientDict = self.return_clients
@@ -87,7 +87,6 @@ class p2pbootstrapper:
         # TODO:  Add client to self.clients                                          #
         ##############################################################################
         self.mutex.acquire()
-        self.client_id_counter += 1
         self.clients.update({client_id: (ip, port)})
         self.mutex.release()
 

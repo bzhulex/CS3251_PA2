@@ -51,6 +51,7 @@ import json
 from enum import Enum
 import random
 import pickle
+import threading
 
 class Status(Enum):
             INITIAL = 0
@@ -90,6 +91,7 @@ class p2pclient:
         ##############################################################################
         self.status = Status.INITIAL
         self.register()
+        #register may need to be adjusted here to make sure the server calls the client by the correct id?
         
         ##############################################################################
         # TODO:  You can set status variable based on the status of the client:      #
@@ -116,9 +118,17 @@ class p2pclient:
         #        You will need to link each connecting client to a new thread (using #
         #        client_thread function below) to handle the requested action.       #
         ##############################################################################
-        pass
+        #code added by Anna Gardner
+        self.socket.listen()
+        while True:
+            # accept connections from outside
+            (clientsocket, (ip, port)) = self.socket.accept()
 
-    def client_thread(self):
+            clientThread = threading.Thread(target = self.client_thread, args = (clientsocket, ip, port))
+            clientThread.start()
+        #end of code added by Anna
+
+    def client_thread(self, clientsocket, ip, port):
         ##############################################################################
         # TODO:  This function should handle the incoming connection requests from   #
         #        other clients.You are free to add more arguments to this function   #
@@ -127,7 +137,13 @@ class p2pclient:
         #        action needs to be done. For example, if the client is requesting   #
         #        list of known clients, you can return the output of self.return_list_of_known_clients #
         ##############################################################################
-        pass
+            data = pickle.load(clientsocket.recv())
+            if data :
+                if data == 'knownClientsPlease' :
+                #here compare if string sent indicates that client wants to disconnect
+                    clientsocket.send(pickle.dumps(self.return_list_of_known_clients()))
+                elif data == 'contentList' :
+                    clientsocket.send(pickle.dumps(self.return_content_list()))
 
     def register(self, ip='127.0.0.1', port=8888):
         ##############################################################################
@@ -139,15 +155,16 @@ class p2pclient:
             clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             clientsocket.connect((ip, port))
             data = pickle.loads(clientsocket.recv())
+            self.client_id = data
 
-        clientsocket.send(1)
+        self.socket.send(pickle.dump('register'))
 
     def deregister(self, ip='127.0.0.1', port=8888):
         ##############################################################################
         # TODO:  Deregister with the bootstrapper                                    #
         #        Append an entry to self.log that deregistration is successful       #
         ##############################################################################
-        clientsocket.send(2)
+        self.socket.send(pickle.dump('deregister'))
 
     def start(self):
         ##############################################################################
@@ -175,15 +192,15 @@ class p2pclient:
         #        registered clients.                                                 #
         #        Append an entry to self.log                                         #
         ##############################################################################
-        pass
+        self.client_id.send(pickle.dump('sendList'))
+        return self.client_id.recv(pickle.load()).copy()
 
     def query_client_for_known_client(self, client_id):
-        client_list = None
         ##############################################################################
         # TODO:  Connect to the client and get the list of clients it knows          #
         #        Append an entry to self.log                                         #
         ##############################################################################
-        return client_list
+        client_id.send(pickle.dump('knownClientsPlease'))
 
     def return_list_of_known_clients(self):
         ##############################################################################
@@ -199,7 +216,7 @@ class p2pclient:
         # TODO:  Connect to the client and get the list of content it has            #
         #        Append an entry to self.log                                         #
         ##############################################################################
-        return content_list
+        client_id.send(pickle.dump('contentList'))
 
 
     def return_content_list(self):

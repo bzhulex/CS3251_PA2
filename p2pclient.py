@@ -162,7 +162,6 @@ class p2pclient:
             #data = pickle.loads(clientsocket.recv())
             #self.client_id = data
             #self.log[time] = "REGISTER"
-
         self.bootstrapperSocket.send(pickle.dump('register'))
 
     def deregister(self, ip='127.0.0.1', port=8888):
@@ -189,7 +188,7 @@ class p2pclient:
         ##############################################################################
         
         for act in self.actions:
-            
+
             self.log[act] = time
             time.sleep(1)
             self.curr_time += 1

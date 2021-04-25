@@ -21,7 +21,7 @@ class p2pbootstrapper:
         self.boots_socket = None
         self.clients = {}  # None for now, will get updates as clients register
         self.client_id_counter = 0
-        self.clients_lock = threading.Lock()
+        self.mutex = threading.Lock()
         
         #code added by Anna Gardner
         self.boots_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -86,14 +86,18 @@ class p2pbootstrapper:
         ##############################################################################
         # TODO:  Add client to self.clients                                          #
         ##############################################################################
+        self.mutex.acquire()
         self.client_id_counter += 1
         self.clients.update({client_id: (ip, port)})
+        self.mutex.release()
 
     def deregister_client(self, client_id):
         ##############################################################################
         # TODO:  Delete client from self.clients                                     #
         ##############################################################################
+        self.mutex.acquire()
         self.clients.pop(client_id)
+        self.mutex.release()
 
     def return_clients(self):
         ##############################################################################

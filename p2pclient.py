@@ -69,6 +69,8 @@ class p2pclient:
         self.content = content
         self.actions = actions  # this list of actions that the client needs to execute
 
+        self.curr_time = 1
+
         self.content_originator_list = None  # This needs to be kept None here, it will be built eventually
 
         ##############################################################################
@@ -82,7 +84,7 @@ class p2pclient:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         random.seed(client_id)
         port = random.randint(9000, 9999)
-        self.socket.bind((socket.gethostname()), port)
+        self.socket.bind((socket.gethostname(), port))
 
         ##############################################################################
         # TODO:  Register with the bootstrapper by calling the 'register' function   #
@@ -156,6 +158,7 @@ class p2pclient:
             clientsocket.connect((ip, port))
             data = pickle.loads(clientsocket.recv())
             self.client_id = data
+            self.log[time] = "REGISTER"
 
         self.socket.send(pickle.dump('register'))
 
@@ -181,9 +184,15 @@ class p2pclient:
         # this is what the autograder is looking for. Python’s json package should   #
         # come handy.                                                                #
         ##############################################################################
+        
+        for act in self.actions:
+            self.log[act] = time
+            time.sleep(1)
+            self.curr_time += 1
+
         string = "client_" + str(self.client_id) + ".json"
         with open(string, "w") as outfile:
-            json.dump(self.log), outfile
+            json.dump(self.actions), outfile
         
 
     def query_bootstrapper_all_clients(self):

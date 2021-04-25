@@ -11,7 +11,9 @@ if __name__ == "__main__":
     # 4) Call bootst.start() which inturn calls the start of all clients       #
     ##############################################################################
     bootst = p2pbootstrapper()
-
+    bootst.start_listening()
+    time.sleep(5)
+    bootst.start()
     ##############################################################################
     #  We know that listenign on a port is a blocking action, and the B.S        #
     #  cannot call start() once it starts listening. Threads to the rescue!     #

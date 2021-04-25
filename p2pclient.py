@@ -74,6 +74,12 @@ class p2pclient:
 
         self.content_originator_list = None  # This needs to be kept None here, it will be built eventually
 
+        # 'log' variable is used to record the series of events that happen on the client
+        # Empty list for now, update as we take actions
+        # See instructions above on how to append to log
+        self.log = []
+
+
         ##############################################################################
         # TODO:  You know that in a P2P architecture, each client acts as a client   #
         #        and the server. Now we need to setup the server socket of this client#
@@ -106,12 +112,6 @@ class p2pclient:
         ##############################################################################
 
         self.status = Status.REGISTERED
-
-        # 'log' variable is used to record the series of events that happen on the client
-        # Empty list for now, update as we take actions
-        # See instructions above on how to append to log
-        self.log = {}
-
 
     def start_listening(self):
         ##############################################################################
@@ -161,13 +161,13 @@ class p2pclient:
             self.bootstrapperSocket.connect((ip, port))
             #data = pickle.loads(clientsocket.recv())
             #self.client_id = data
-            register_dict = []
-            register_dict["time"] = curr_time
-            register_dict["text"] = str("Client ID" +str(client_id)+"registered")
+            register_dict = {}
+            register_dict["time"] = self.curr_time
+            register_dict["text"] = str("Client ID" +str(self.client_id)+"registered")
             self.log.append(register_dict)
 
-        self.bootstrapperSocket.send(pickle.dump('register'))
-        self.bootstrapperSocket.send(pickle.dump(self.client_id))
+        self.bootstrapperSocket.send(pickle.dumps('register'))
+        self.bootstrapperSocket.send(pickle.dumps(self.client_id))
 
     def deregister(self, ip='127.0.0.1', port=8888):
         ##############################################################################
@@ -175,7 +175,7 @@ class p2pclient:
         #        Append an entry to self.log that deregistration is successful       #
         ##############################################################################
         self.bootstrapperSocket.send(pickle.dump('deregister'))
-        dereg_dict = []
+        dereg_dict = {}
         dereg_dict["time"] = curr_time
         dereg_dict["text"] = Unregistered
         self.log.append(dereg_)
@@ -220,7 +220,7 @@ class p2pclient:
 
         string = "client_" + str(self.client_id) + ".json"
         with open(string, "w") as outfile:
-            json.dumps(self.actions), outfile
+            json.dump(self.actions, outfile)
         
 
     def query_bootstrapper_all_clients(self):
@@ -231,7 +231,7 @@ class p2pclient:
         ##############################################################################
         self.bootstrapperSocket.send(pickle.dump('sendList'))
         toReturn = self.bootstrapperSocket.recv(pickle.load()).copy()
-        q_dict = []
+        q_dict = {}
         q_dict["time"] = self.curr_time
         q_dict["text"] = "Boostrapper "
         self.log.append(q_dict)
@@ -247,7 +247,7 @@ class p2pclient:
         clientSocket.connect((ip, port))
         clientSocket.send(pickle.dump('knownClientsPlease'))
         knownClientsDict = clientSocket.recv(pickle.load())
-        q_dict = []
+        q_dict = {}
         q_dict["time"] = self.curr_time
         q_dict["text"] = str("Client "+str(client_id)+json.dumps(knownClientsDict))
         self.log.append(q_dict)
@@ -272,7 +272,7 @@ class p2pclient:
         clientSocket.connect((ip, port))
         clientSocket.send(pickle.dump('contentList'))
         knownContentList = clientSocket.recv(pickle.load())
-        q_dict = []
+        q_dict = {}
         q_dict["time"] = self.curr_time
         q_dict["text"] = str("Client "+str(client_id)+''.join(knownContentList))
         return knownContentList
@@ -309,7 +309,7 @@ class p2pclient:
                 if content == content_id:
                     self.content.append(content_id)
                     self.content_originator_list.update({content_id: self.knownClients.get(client)})
-                    q_dict = []
+                    q_dict = {}
                     q_dict["time"] = self.curr_time
                     q_dict["text"] = str("Obtained "+str(content_id)+" from ")
                     self.log.append(q_dict)
@@ -324,14 +324,11 @@ class p2pclient:
                         if contentboi == content_id:
                             self.content.append(content_id)
                             self.content_originator_list.update({content_id: self.knownClients.get(clientclient)})
-                            q_dict = []
+                            q_dict = {}
                             q_dict["time"] = self.curr_time
                             q_dict["text"] = str("Obtained "+str(content_id)+" from ")
                             self.log.append(q_dict)
                             return
-
-
-        
 
 
     def purge_content(self, content_id):
@@ -340,6 +337,6 @@ class p2pclient:
         #        Append an entry to self.log that content is purged                                         #
         #####################################################################################################
         self.content.remove(content_id)
-        purge_dict = []
+        purge_dict = {}
         purge_dict["time"] = self.curr_time
         purge_dict["text"] = str("Removed "+str(content_id))

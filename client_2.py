@@ -20,7 +20,7 @@ if __name__ == "__main__":
     ##############################################################################
     #Brian's Code
     with open('2.json') as f:
-        client_12 = json.load(f)
+        client_2 = json.load(f)
 
     content = client_2['content']
     actions = client_2['actions']

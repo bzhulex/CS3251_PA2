@@ -25,7 +25,7 @@ class p2pbootstrapper:
         
         #code added by Anna Gardner
         self.boots_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.boots_socket.bind(ip, port)
+        self.boots_socket.bind((ip, port))
         self.start_listening()
         #end of code added by Anna
 

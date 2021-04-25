@@ -161,7 +161,7 @@ class p2pclient:
             self.bootstrapperSocket.connect((ip, port))
             #data = pickle.loads(clientsocket.recv())
             #self.client_id = data
-            self.log[time] = "REGISTER"
+            #self.log[time] = "REGISTER"
 
         self.bootstrapperSocket.send(pickle.dump('register'))
 

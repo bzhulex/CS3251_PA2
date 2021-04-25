@@ -187,8 +187,10 @@ class p2pclient:
         # come handy.                                                                #
         ##############################################################################
         
+        #set time to zero
         for act in self.actions:
-
+            #perform action -> somehow parse it from this actions input 
+            
             self.log[act] = time
             time.sleep(1)
             self.curr_time += 1

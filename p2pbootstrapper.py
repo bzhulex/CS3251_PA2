@@ -6,6 +6,10 @@ interpreted on the other end.
 """
 import socket
 import threading
+import sys
+import pickle
+
+#TODO: mutex lock self.clients dict since multiple threads access it
 
 class p2pbootstrapper:
     def __init__(self, ip='127.0.0.1', port=8888):
@@ -15,7 +19,8 @@ class p2pbootstrapper:
         ##############################################################################
 
         self.boots_socket = None
-        self.clients = None  # None for now, will get updates as clients register
+        self.clients = {}  # None for now, will get updates as clients register
+        self.clients_lock = threading.Lock()
         
         #code added by Anna Gardner
         self.boots_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -39,8 +44,8 @@ class p2pbootstrapper:
             # accept connections from outside
             (clientsocket, (ip, port)) = self.boots_socket.accept()
 
-            #SOS idk how to start a thread rip.... but a new thread needs to be created here
-            self.thread.client_thread(clientsocket, ip, port)
+            clientThread = threading.Thread(target = self.client_thread, args = (clientsocket, ip, port))
+            clientThread.start()
         #end of code added by Anna
 
     def client_thread(self, clientsocket, ip, port):
@@ -55,32 +60,38 @@ class p2pbootstrapper:
 
         #code added by Anna Gardner
         self.register_client(clientsocket, ip, port)
-        while True:
-            data = self.boots_socket.recv()
-            if data == 'deregister':
+        while True :
+            data = clientsocket.recv()
+            if data :
+                receivedClientRequest = int.from_bytes(sys.byteorder)
+                if receivedClientRequest == 1 :
                 #here compare if string sent indicates that client wants to disconnect
-                self.deregister_client(clientsocket, ip, port)
-            else :
-               self.return_client(clientsocket)
+                    self.deregister_client(clientsocket)
+                elif receivedClientRequest == 2 :
+                    self.register_client(clientsocket, ip, port)
+                elif receivedClientRequest == 3:
+                    binaryClientDict = pickle.dumps(self.return_clients)
+                    clientsocket.send(binaryClientDict)
+        
         #end of code added by Anna
 
     def register_client(self, client_id, ip, port):  
         ##############################################################################
         # TODO:  Add client to self.clients                                          #
         ##############################################################################
-        self.clients.append(client_id)
+        self.clients.update({client_id : (ip, port)})
 
     def deregister_client(self, client_id):
         ##############################################################################
         # TODO:  Delete client from self.clients                                     #
         ##############################################################################
-        self.clients.remove(client_id)
+        self.clients.pop(client_id)
 
     def return_clients(self):
         ##############################################################################
         # TODO:  Return self.clients                                                 #
         ##############################################################################
-        self.boots_socket.send(self.clients)
+        return self.clients.copy()
 
     def start(self):
         ##############################################################################
@@ -88,4 +99,5 @@ class p2pbootstrapper:
         #        actions                                                             #
         ##############################################################################
         for client in self.clients:
-            client.start()
+            client.send('start')
+

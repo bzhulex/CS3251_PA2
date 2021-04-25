@@ -61,13 +61,13 @@ class p2pbootstrapper:
         #code added by Anna Gardner
         #clientsocket.send(pickle.dumps(clientsocket))
         while True :
-            data = pickle.load(clientsocket.recv())
+            data = pickle.loads(clientsocket.recv(1024))
             if data :
                 if data == 'deregister' :
                 #here compare if string sent indicates that client wants to disconnect
                     self.deregister_client(clientsocket)
                 elif data == 'register' :
-                    client_id = pickle.load(clientsocket.recv())
+                    client_id = pickle.loads(clientsocket.recv(1024))
                     self.register_client(client_id, ip, port)
                 elif data == 'sendList':
                     clientDict = self.return_clients

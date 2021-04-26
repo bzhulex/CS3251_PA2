@@ -52,6 +52,7 @@ from enum import Enum
 import random
 import pickle
 import threading
+import struct 
 
 class Status(Enum):
             INITIAL = 0
@@ -68,11 +69,11 @@ class p2pclient:
         self.client_id = client_id
         self.content = content
         self.actions = actions  # this list of actions that the client needs to execute
-        for act in actions:
-            print("        "+json.dumps(act))
+        #for act in actions:
+        #    print("        "+json.dumps(act))
         self.knownClients = {}
 
-        self.curr_time = 1
+        #self.curr_time = 1
 
         self.content_originator_list = None  # This needs to be kept None here, it will be built eventually
 
@@ -93,7 +94,7 @@ class p2pclient:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         random.seed(client_id)
         self.port = random.randint(9000, 9999)
-        self.socket.bind((socket.gethostname(), self.port))
+        self.socket.bind(('127.0.0.1', self.port))
 
         ##############################################################################
         # TODO:  Register with the bootstrapper by calling the 'register' function   #
@@ -101,10 +102,12 @@ class p2pclient:
         #        port that this client is running on to the bootstrapper.            #
         ##############################################################################
         self.status = Status.INITIAL
-        self.register()
+        self.register(0)
         self.status = Status.REGISTERED
         #register may need to be adjusted here to make sure the server calls the client by the correct id?
-        
+        # data = pickle.loads(self.bootstrapperSocket.recv(1024))
+        # if data == 'START':
+        #     self.start()
         ##############################################################################
         # TODO:  You can set status variable based on the status of the client:      #
         #        Initial: if not yet initialized a connection to the bootstrapper    #
@@ -113,7 +116,7 @@ class p2pclient:
         #        Feel free to add more states if you need to                         #
         #        HINT: You may find enum datatype useful                             #
         ##############################################################################
-        #self.start()
+        self.start()
         
 
     def start_listening(self):
@@ -129,8 +132,7 @@ class p2pclient:
         while True:
             # accept connections from outside
             (clientsocket, (ip, port)) = self.socket.accept()
-            data = pickle.loads(self.bootstrapperSocket.recv(1024))
-            data = "START"
+            #print("     client ip and port "+ip + " " + str(port))
             clientThread = threading.Thread(target = self.client_thread, args = (clientsocket, ip, port))
             clientThread.start()
         #end of code added by Anna
@@ -144,50 +146,61 @@ class p2pclient:
         #        action needs to be done. For example, if the client is requesting   #
         #        list of known clients, you can return the output of self.return_list_of_known_clients #
         ##############################################################################
-            data = pickle.load(clientsocket.recv(2048))
+        
+        while True:
+            data = clientsocket.recv(1024).decode('utf-8')
+            #print("data "+data)
+            #O, S, M commands
+            #hint stuff
             if data :
+                if data == "START":
+                    self.start()
                 if data == 'knownClientsPlease' :
                 #here compare if string sent indicates that client wants to disconnect
-                    clientsocket.send(pickle.dumps(self.return_list_of_known_clients()))
+                    clientsocket.send(json.dumps(self.return_list_of_known_clients()).encode('utf-8'))
                 elif data == 'contentList' :
-                    clientsocket.send(pickle.dumps(self.return_content_list()))
-            #might not need to close
-            clientsocket.close()
+                    clientsocket.send(json.dumps(self.return_content_list()).encode('utf-8'))
 
-    def register(self, ip='127.0.0.1', port=8888):
+
+    def register(self, curr_time,  ip='127.0.0.1', port=8888):
         ##############################################################################
         # TODO:  Register with the bootstrapper. Make sure you communicate the server#
         #        port that this client is running on to the bootstrapper.            #
         #        Append an entry to self.log that registration is successful         #
         ##############################################################################
         if self.status == Status.INITIAL:
-            self.bootstrapperSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.bootstrapperSocket.connect((ip, port))
+            bootstrapperSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            bootstrapperSocket.connect((ip, port))
             #data = pickle.loads(clientsocket.recv())
             #self.client_id = data
-            register_dict = {}
-            register_dict["time"] = self.curr_time
-            register_dict["text"] = str("Client ID" +str(self.client_id)+"registered")
-            self.log.append(register_dict)
+            toSend = str(str(self.client_id) + ' register '+ str(ip) +' '+str(self.port))
+            bootstrapperSocket.send(json.dumps(toSend).encode('utf-8'))
+            bootstrapperSocket.close()
+            if curr_time != 0:
+                register_dict = {}
+                register_dict["time"] = self.curr_time
+                register_dict["text"] = str("Client ID " +str(self.client_id)+" registered")
+                self.log.append(register_dict)
+    
 
-        self.bootstrapperSocket.send(pickle.dumps(str(self.client_id) + ' register '+ str(ip) +' '+str(self.port)))
-        #print("p2pclient client_id: "+str(self.client_id))
-        #self.bootstrapperSocket.send(pickle.dumps(self.client_id))
-
-
-
-    def deregister(self, ip='127.0.0.1', port=8888):
+    def deregister(self, curr_time, ip='127.0.0.1', port=8888):
         ##############################################################################
         # TODO:  Deregister with the bootstrapper                                    #
         #        Append an entry to self.log that deregistration is successful       #
         ##############################################################################
-        self.bootstrapperSocket.send(pickle.dumps(str(self.client_id) + ' deregister '+ str(ip) +' '+str(self.port)))
+        bootstrapperSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        bootstrapperSocket.connect((ip, port))
+        toSend = str(str(self.client_id) + ' deregister '+ str(ip) +' '+str(self.port))
+        # var = struct.pack('i', len(toSend))
+        # self.bootstrapperSocket.send(var)
+        bootstrapperSocket.send(json.dumps(toSend).encode('utf-8'))
+        bootstrapperSocket.close()
         dereg_dict = {}
         dereg_dict["time"] = curr_time
-        dereg_dict["text"] = Unregistered
+        dereg_dict["text"] = "Unregistered"
         self.log.append(dereg_dict)
 
-        print("DEREGISTER FINISHED")
+        #print("DEREGISTER FINISHED")
 
     def start(self):
         ##############################################################################
@@ -206,69 +219,98 @@ class p2pclient:
         ##############################################################################
         
         #set time to zero
-        for act in self.actions:
-            print(str("Time Step: "+str(self.curr_time)))
-            #perform action -> somehow parse it from this actions input 
-            code = act["code"]
-            if code == "R":
-                self.register()
-            elif code == "U":
-                self.deregister()
-            elif code == "Q":
-                print("     p2pclient request content")
-                self.request_content(act["content_id"])
-            elif code == "P":
-                self.purge_content(act["content_id"])    
-            elif code == "O":
-                self.query_client_for_known_client(act["client_id"])
-            elif code == "M":
-                self.query_client_for_content_list(act["client_id"])
-            elif code == "L":
-                self.query_bootstrapper_all_clients()
-
-            time.sleep(1)
-            self.curr_time += 1
-
+        start = time.time()
+        action_num = 0
+        while action_num < len(self.actions):
+            time_diff = time.time() - start
+            
+            if self.actions[action_num]["time"] < time_diff:
+            #perform action -> somehow parse it from this actions input
+                curr_time = self.actions[action_num]["time"] 
+                #print("ACTION NUM: "+str(action_num) + "CURR TIME " + str(curr_time))
+                code = self.actions[action_num]["code"]
+                if code == "R":
+                    self.register(curr_time)
+                elif code == "U":
+                    self.deregister(curr_time)
+                elif code == "Q":
+                    self.request_content(self.actions[action_num]["content_id"], curr_time)
+                elif code == "P":
+                    self.purge_content(self.actions[action_num]["content_id"], curr_time)    
+                elif code == "O":
+                    self.query_client_for_known_client(self.actions[action_num]["client_id"], curr_time)
+                elif code == "M":
+                    self.query_client_for_content_list(self.actions[action_num]["client_id"], curr_time)
+                elif code == "L":
+                    self.query_bootstrapper_all_clients(curr_time)
+                action_num += 1
+            
+                
         string = "client_" + str(self.client_id) + ".json"
-        with open(string, "w") as outfile:
-            json.dump(self.actions, outfile)
-            outfile.close()
-        
+        outfile = open(string, "w")
+        json.dump(json.dumps(self.log), outfile)
+        outfile.close()
 
-    def query_bootstrapper_all_clients(self):
+
+    def query_bootstrapper_all_clients(self, curr_time, ip='127.0.0.1', port=8888):
         ##############################################################################
         # TODO:  Use the connection to ask the bootstrapper for the list of clients  #
         #        registered clients.                                                 #
         #        Append an entry to self.log                                         #
         ##############################################################################
-        print("     start query_bootstrapper_all_clients")
+        #print("     start query_bootstrapper_all_clients")
         while self.status == Status.INITIAL:
             pass
-        self.bootstrapperSocket.send(pickle.dumps(str(self.client_id) + ' sendList '+ '127.0.0.1' +' '+str(self.port)))
-        print("     sendList flag sent")
-        toReturn = pickle.loads(self.bootstrapperSocket.recv(1024)).copy()
-        print("     query all clients "+json.dumps(toReturn))
+        bootstrapperSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        bootstrapperSocket.connect((ip, port))
+        toSend = str(str(self.client_id) + ' sendList '+ '127.0.0.1' +' '+str(self.port))
+        # var = struct.pack('i', len(toSend))
+        # self.bootstrapperSocket.send(var)
+        bootstrapperSocket.send(json.dumps(toSend).encode('utf-8'))
+        #print("     sendList flag sent")
+        # length = self.bootstrapperSocket.recv(4)
+        # length_hdr = struct.unpack('i', length)[0]
+        data = bootstrapperSocket.recv(1048).decode('utf-8')
+        bootstrapperSocket.close()
+        toReturn = json.loads(data)
+        #print("     query all clients "+json.dumps(toReturn))
+        var = '<'
+        for client in toReturn:
+            var += '<'
+            for piece in client:
+                var += str(piece)+','
+            var += ">"
+        var += '>'
         q_dict = {}
-        q_dict["time"] = self.curr_time
-        q_dict["text"] = "Boostrapper "
+        q_dict['time'] = curr_time
+        q_dict['text'] = "Bootstrapper "+var
         self.log.append(q_dict)
         return toReturn
 
-    def query_client_for_known_client(self, client_id):
+    def query_client_for_known_client(self, curr_time, client_id, ip='127.0.0.1', port=8888):
         ##############################################################################
         # TODO:  Connect to the client and get the list of clients it knows          #
         #        Append an entry to self.log                                         #
         ##############################################################################
-        (ip, port) = self.knownClients.get(client_id)
-        clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        clientSocket.connect((ip, port))
-        clientSocket.send(pickle.dumps('knownClientsPlease'))
-        knownClientsDict = pickle.loads(clientSocket.recv(1024))
-        q_dict = {}
-        q_dict["time"] = self.curr_time
-        q_dict["text"] = str("Client "+str(client_id)+" "+json.dumps(knownClientsDict))
-        self.log.append(q_dict)
-        return knownClientsDict
+        all_clients = self.query_bootstrapper_all_clients(curr_time)
+        ip = None
+        port = 0
+        for client in all_clients:
+            if client[0] == client_id:
+                right_client = client
+                ip = client[1]
+                port = client[2]
+
+        #(ip, port) = self.knownClients.get(client_id)
+        # clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # clientSocket.connect((ip, port))
+        # clientSocket.send(pickle.dumps('knownClientsPlease'))
+        # knownClientsDict = pickle.loads(clientSocket.recv(1024))
+        # q_dict = {}
+        # q_dict["time"] = curr_time
+        # q_dict["text"] = str("Client "+str(client_id)+" "+json.dumps(knownClientsDict))
+        # self.log.append(q_dict)
+        # return knownClientsDict
 
 
     def return_list_of_known_clients(self):
@@ -277,31 +319,44 @@ class p2pclient:
         #        HINT: You could make a set of <IP, Port> from self.content_originator_list #
         #        and return it.                                                      #
         ##############################################################################
-        return self.knownClients.copy()
+        #could iterate over content originator list adn get ip and port numbers
+        #return self.knownClients.copy()
+        pass
 
-    def query_client_for_content_list(self, client_id):
+    def query_client_for_content_list(self, client_id, curr_time):
         ##############################################################################
         # TODO:  Connect to the client and get the list of content it has            #
         #        Append an entry to self.log                                         #
         ##############################################################################
-        (ip, port) = self.knownClients.get(client_id)
-        clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        clientSocket.connect((ip, port))
-        clientSocket.send(pickle.dumps('contentList'))
-        knownContentList = clientSocket.recv(pickle.load())
-        q_dict = {}
-        q_dict["time"] = self.curr_time
-        q_dict["text"] = str("Client "+str(client_id)+''.join(knownContentList))
-        return knownContentList
+        all_clients = self.query_bootstrapper_all_clients(curr_time)
+        ip = None
+        port = 0
+        for client in all_clients:
+            if client[0] == client_id:
+                right_client = client
+                ip = client[1]
+                port = client[2]
+
+        # clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # clientSocket.connect((ip, port))
+        # clientSocket.send(pickle.dumps('contentList'))
+        # knownContentList = clientSocket.recv(pickle.load())
+        # q_dict = {}
+        # q_dict["time"] = curr_time
+        # q_dict["text"] = str("Client "+str(client_id)+''.join(knownContentList))
+        # return knownContentList
 
 
-    def return_content_list(self):
+    def return_content_list(self, curr_time):
         ##############################################################################
         # TODO:  Return the content list that you have (self.content)                #
         ##############################################################################
-        return self.content_originator_list.copy()
+        pass
+        # col = [i[0] for i in self.content_originator_list]
+        # temp = [i for i in self.content if i in col ]
+        # return self.content_originator_list.copy()
 
-    def request_content(self, content_id):
+    def request_content(self, content_id, curr_time):
         #####################################################################################################
         # TODO:  Your task is to obtain the content and append it to the                                    #
         #        self.content list.  To do this:                                                            #
@@ -317,43 +372,51 @@ class p2pclient:
         #        their responses(hints, if present) appropriately in the self.content_originator_list       #
         #        Append an entry to self.log that content is obtained                                       #
         #####################################################################################################
-        bootstrapperClients = self.query_bootstrapper_all_clients()
-        for client in bootstrapperClients:
-            self.knownClients.update({client, bootstrapperClients.get(client)})
-        for client in bootstrapperClients:
-            clientContentList = self.query_client_for_content_list(client)
-            for content in clientContentList:
-                if content == content_id:
-                    self.content.append(content_id)
-                    self.content_originator_list.update({content_id: self.knownClients.get(client)})
-                    q_dict = {}
-                    q_dict["time"] = self.curr_time
-                    q_dict["text"] = str("Obtained "+str(content_id)+" from "+str(self.knownClients.get(client)))
-                    self.log.append(q_dict)
-                    return
-        for client in bootstrapperClients:
-            clientKnownContacts = self.query_client_for_known_client(client)
-            for clientclient in clientKnownContacts:
-                if self.knownClients.get(client) == None :
-                    self.knownClients.update({clientclient: clientKnownContacts.get(clientclient)})
-                    clientclientContentList = self.query_client_for_content_list(clientclient)
-                    for contentboi in clientclientContentList:
-                        if contentboi == content_id:
-                            self.content.append(content_id)
-                            self.content_originator_list.update({content_id: self.knownClients.get(clientclient)})
-                            q_dict = {}
-                            q_dict["time"] = self.curr_time
-                            q_dict["text"] = str("Obtained "+str(content_id)+" from "+str(self.knownClients.get(client)))
-                            self.log.append(q_dict)
-                            return
+        #do .sends in here
+        #go though each client and send the content id
+        #   each client will check in it's own content for the content ID
+        #   if not each clinet will check its COL 
+        #   if none of that send a NO
+        #   if you get a NO go to next client
+        #   if you get a hint then jump to next client
+        #   when tou get the data log it an append 
+        # bootstrapperClients = self.query_bootstrapper_all_clients()
+        # for client in bootstrapperClients:
+        #     self.knownClients.update({client, bootstrapperClients.get(client)})
+        # for client in bootstrapperClients:
+        #     clientContentList = self.query_client_for_content_list(client)
+        #     for content in clientContentList:
+        #         if content == content_id:
+        #             self.content.append(content_id)
+        #             self.content_originator_list.update({content_id: self.knownClients.get(client)})
+        #             q_dict = {}
+        #             q_dict["time"] = self.curr_time
+        #             q_dict["text"] = str("Obtained "+str(content_id)+" from "+str(self.knownClients.get(client)))
+        #             self.log.append(q_dict)
+        #             return
+        # for client in bootstrapperClients:
+        #     clientKnownContacts = self.query_client_for_known_client(client)
+        #     for clientclient in clientKnownContacts:
+        #         if self.knownClients.get(client) == None :
+        #             self.knownClients.update({clientclient: clientKnownContacts.get(clientclient)})
+        #             clientclientContentList = self.query_client_for_content_list(clientclient)
+        #             for contentboi in clientclientContentList:
+        #                 if contentboi == content_id:
+        #                     self.content.append(content_id)
+        #                     self.content_originator_list.update({content_id: self.knownClients.get(clientclient)})
+        #                     q_dict = {}
+        #                     q_dict["time"] = self.curr_time
+        #                     q_dict["text"] = str("Obtained "+str(content_id)+" from "+str(self.knownClients.get(client)))
+        #                     self.log.append(q_dict)
+        #                     return
+        pass
 
-
-    def purge_content(self, content_id):
+    def purge_content(self, content_id, curr_time):
         #####################################################################################################
         # TODO:  Delete the content from your content list                                                  #
         #        Append an entry to self.log that content is purged                                         #
         #####################################################################################################
-        self.content.remove(content_id)
+        # self.content.remove(content_id)
         purge_dict = {}
-        purge_dict["time"] = self.curr_time
+        purge_dict["time"] = curr_time
         purge_dict["text"] = str("Removed "+str(content_id))

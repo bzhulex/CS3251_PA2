@@ -19,6 +19,7 @@ if __name__ == "__main__":
     #        the p2pclient below                                                 #
     ##############################################################################
     #Brian's code
+    time.sleep(2)
     with open('1.json') as f:
         client_1 = json.load(f)
 

@@ -10,6 +10,7 @@ import sys
 import pickle
 import json
 import random
+
 #TODO: mutex lock self.clients and client counter for race conditions dict since multiple threads access it
 
 class p2pbootstrapper:
@@ -20,7 +21,8 @@ class p2pbootstrapper:
         ##############################################################################
 
         self.boots_socket = None
-        self.clients = {}  # None for now, will get updates as clients register
+        self.clients = []  # None for now, will get updates as clients register
+        self.connections = []
         self.mutex = threading.Lock()
         
         #code added by Anna Gardner
@@ -44,15 +46,21 @@ class p2pbootstrapper:
         while True:
             # accept connections from outside
             (clientsocket, (ip, port)) = self.boots_socket.accept()
-            data = pickle.loads(clientsocket.recv(1024))
-            data_arr = data.split(" ")
-            print(data)
-            print("bootstrapper start listening " + str(port))
-            clientThread = threading.Thread(target = self.client_thread, args = (clientsocket, data[0], data[1], data[2], data[3]))
+            #print("bootstrapper ip and port "+ip + " " + str(port))
+            #self.connections.append(clientsocket)
+            # length =  clientsocket.recv(4)
+            # length_hdr = struct.unpack('i', length)[0]
+            #print("msg length " + str(length_hdr))
+            # data = clientsocket.recv(1024).decode('utf-8')
+            # #print(str(type(data)))
+            # data_arr = data.split(" ")
+            # print(data)
+            # print("bootstrapper start listening " + str(port))
+            clientThread = threading.Thread(target = self.client_thread, args = (clientsocket, ip, port))#, data_arr[0], data_arr[1], data_arr[2], data_arr[3]))
             clientThread.start()
         #end of code added by Anna
 
-    def client_thread(self, clientsocket, client_id, command, ip, port):
+    def client_thread(self, clientsocket, ip, port):#, client_id, command, ip, port):
         ##############################################################################
         # TODO:  This function should handle the incoming connection requests from   #
         #        clients. You are free to add more arguments to this function based  #
@@ -65,39 +73,49 @@ class p2pbootstrapper:
         #code added by Anna Gardner
         #clientsocket.send(pickle.dumps(clientsocket))
         while True :
-            data = command
-            #data_arr = data.split(" ")
-            #data = data_arr[0]
-            #print("boostrapper data: "+data)
-            if data :
+            data = clientsocket.recv(1024).decode('utf-8')
+            data = data.replace('"', '')
+            if data:
+                #print("bootstrapper data " +data[0])
+                data_arr = data.split(" ")
+                client_id = data_arr[0]
+                data = data_arr[1]
+                ip = data_arr[2]
+                port = data_arr[3]
+                #print("boostrapper command: "+data)
                 if data == 'deregister' :
                 #here compare if string sent indicates that client wants to disconnect
                     self.deregister_client(client_id)
                 elif data == 'register' :
-                    #client_id = pickle.loads(clientsocket.recv(1024))
-                    #if not client_id:
-                    #    break
-                    self.register_client(client_id, ip, port_num)
+                    self.register_client(client_id, ip, port, clientsocket)
                 elif data == 'sendList':
-                    print("bootstrapper sendlist")
-                    clientDict = self.return_clients() 
-                    if len(clientDict) > 0 :
-                        binaryClientDict = pickle.dumps()
-                        clientsocket.send(binaryClientDict)
+                    #print("bootstrapper sendlist")
+                    client_list = self.return_clients() 
+                    if len(client_list) > 0 :
+                        toSend = json.dumps(client_list)
+                        # var = struct.pack('i', len(toSend))
+                        # clientsocket.send(var)
+                        clientsocket.send(toSend.encode('utf-8'))
                     else: 
                         #this should send nothing i think based on piazza posts
                         clientsocket.send(binaryClientDict)
-                elif data == 'endThread':
-                    clientsocket.close()
-        
+                # elif data == 'endThread':
+                #     clientsocket.close()
+
+            # length =  clientsocket.recv(4)
+            # print("     length: "+str(length))
+            # length_hdr = struct.unpack('i', length)[0]
+            # print("msg length " + str(length_hdr))
+            
         #end of code added by Anna
 
-    def register_client(self, client_id, ip, port):  
+    def register_client(self, client_id, ip, port, clientsocket):  
         ##############################################################################
         # TODO:  Add client to self.clients                                          #
         ##############################################################################
         self.mutex.acquire()
-        self.clients.update({client_id: (ip, port)})
+        self.clients.append((client_id, ip, port))
+        self.connections.append(clientsocket)
         self.mutex.release()
 
         #print("boostrapper clients")
@@ -107,25 +125,33 @@ class p2pbootstrapper:
         ##############################################################################
         # TODO:  Delete client from self.clients                                     #
         ##############################################################################
-        self.mutex.acquire()
-        self.clients.pop(client_id)
-        self.mutex.release()
+        # self.mutex.acquire()
+        # self.clients.pop(client_id)
+        # self.mutex.release()
 
-        print("boostrapper clients deregister")
-        print("     "+json.dumps(self.clients))
+        # print("boostrapper clients deregister")
+        # print("     "+json.dumps(self.clients))
+        pass
 
     def return_clients(self):
         ##############################################################################
         # TODO:  Return self.clients                                                 #
         ##############################################################################
-        return self.clients.copy()
+        clients_copy = self.clients.copy()
+        return clients_copy
 
     def start(self):
         ##############################################################################
         # TODO:  Start timer for all clients so clients can start performing their   #
         #        actions                                                             #
         ##############################################################################
-        print(json.dumps(self.clients))
-        #for client in self.clients:
-            #client.start()
-
+        # print("all clients " + json.dumps(self.clients))
+        # for client in self.clients:
+        #     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #     client_socket.connect((client[1], int(client[2])))
+        #     print("connection successfull "+str(client_socket.getsockname()[1]))
+        #     client_socket.send(json.dumps("START").encode('utf-8'))
+        #     print("send start successfull")
+        #     #time.sleep(2)
+        #     client_socket.close()
+        pass

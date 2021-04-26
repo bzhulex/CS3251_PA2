@@ -8,7 +8,8 @@ import socket
 import threading
 import sys
 import pickle
-
+import json
+import random
 #TODO: mutex lock self.clients and client counter for race conditions dict since multiple threads access it
 
 class p2pbootstrapper:
@@ -25,7 +26,7 @@ class p2pbootstrapper:
         #code added by Anna Gardner
         self.boots_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.boots_socket.bind((ip, port))
-        self.start_listening()
+        #self.start_listening()
         #end of code added by Anna
 
 
@@ -43,7 +44,7 @@ class p2pbootstrapper:
         while True:
             # accept connections from outside
             (clientsocket, (ip, port)) = self.boots_socket.accept()
-
+            print("bootstrapper start listening " + str(port))
             clientThread = threading.Thread(target = self.client_thread, args = (clientsocket, ip, port))
             clientThread.start()
         #end of code added by Anna
@@ -62,15 +63,23 @@ class p2pbootstrapper:
         #clientsocket.send(pickle.dumps(clientsocket))
         while True :
             data = pickle.loads(clientsocket.recv(1024))
+            data_arr = data.split(" ")
+            data = data_arr[0]
+            print("boostrapper data: "+data)
             if data :
                 if data == 'deregister' :
                 #here compare if string sent indicates that client wants to disconnect
                     self.deregister_client(clientsocket)
                 elif data == 'register' :
-                    client_id = pickle.loads(clientsocket.recv(1024))
-                    self.register_client(client_id, ip, port)
+                    #client_id = pickle.loads(clientsocket.recv(1024))
+                    client_id = data_arr[1]
+                    port_num = data_arr[2]
+                    #if not client_id:
+                    #    break
+                    self.register_client(client_id, ip, port_num)
                 elif data == 'sendList':
-                    clientDict = self.return_clients
+                    print("bootstrapper sendlist")
+                    clientDict = self.return_clients() 
                     if len(clientDict) > 0 :
                         binaryClientDict = pickle.dumps()
                         clientsocket.send(binaryClientDict)
@@ -90,6 +99,9 @@ class p2pbootstrapper:
         self.clients.update({client_id: (ip, port)})
         self.mutex.release()
 
+        #print("boostrapper clients")
+        #print("     "+json.dumps(self.clients))
+
     def deregister_client(self, client_id):
         ##############################################################################
         # TODO:  Delete client from self.clients                                     #
@@ -97,6 +109,9 @@ class p2pbootstrapper:
         self.mutex.acquire()
         self.clients.pop(client_id)
         self.mutex.release()
+
+        print("boostrapper clients deregister")
+        print("     "+json.dumps(self.clients))
 
     def return_clients(self):
         ##############################################################################
@@ -109,6 +124,7 @@ class p2pbootstrapper:
         # TODO:  Start timer for all clients so clients can start performing their   #
         #        actions                                                             #
         ##############################################################################
+        print(json.dumps(clients))
         for client in self.clients:
             client.start()
 

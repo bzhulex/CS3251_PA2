@@ -251,7 +251,7 @@ class p2pclient:
                 
         string = "client_" + str(self.client_id) + ".json"
         outfile = open(string, "w")
-        json.dump(json.dumps(self.log), outfile)
+        json.dump(self.log, outfile)
         outfile.close()
 
 
@@ -320,10 +320,10 @@ class p2pclient:
         # clientSocket.connect((ip, port))
         # clientSocket.send(pickle.dumps('knownClientsPlease'))
         # knownClientsDict = pickle.loads(clientSocket.recv(1024))
-        # q_dict = {}
-        # q_dict["time"] = curr_time
-        # q_dict["text"] = str("Client "+str(client_id)+" "+json.dumps(knownClientsDict))
-        # self.log.append(q_dict)
+        q_dict = {}
+        q_dict["time"] = curr_time
+        q_dict["text"] = str("Client "+str(client_id)+": ")
+        self.log.append(q_dict)
         # return knownClientsDict
 
 
@@ -355,9 +355,10 @@ class p2pclient:
         # clientSocket.connect((ip, port))
         # clientSocket.send(pickle.dumps('contentList'))
         # knownContentList = clientSocket.recv(pickle.load())
-        # q_dict = {}
-        # q_dict["time"] = curr_time
-        # q_dict["text"] = str("Client "+str(client_id)+''.join(knownContentList))
+        q_dict = {}
+        q_dict["time"] = curr_time
+        q_dict["text"] = str("Client "+str(client_id)+": ")#''.join(knownContentList))
+        self.log.append(q_dict)
         # return knownContentList
 
 
@@ -423,7 +424,11 @@ class p2pclient:
         #                     q_dict["text"] = str("Obtained "+str(content_id)+" from "+str(self.knownClients.get(client)))
         #                     self.log.append(q_dict)
         #                     return
-        pass
+        q_dict = {}
+        q_dict["time"] = curr_time
+        q_dict["text"] = str("Obtained "+str(content_id)+" from <IP>#<Port>")
+        self.log.append(q_dict)
+       
 
     def purge_content(self, content_id, curr_time):
         #####################################################################################################
@@ -434,3 +439,4 @@ class p2pclient:
         self.content = purge_dict
         purge_dict["time"] = curr_time
         purge_dict["text"] = str("Removed "+str(content_id))
+        self.log.append(purge_dict)

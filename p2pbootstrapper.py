@@ -44,12 +44,15 @@ class p2pbootstrapper:
         while True:
             # accept connections from outside
             (clientsocket, (ip, port)) = self.boots_socket.accept()
+            data = pickle.loads(clientsocket.recv(1024))
+            data_arr = data.split(" ")
+            print(data)
             print("bootstrapper start listening " + str(port))
-            clientThread = threading.Thread(target = self.client_thread, args = (clientsocket, ip, port))
+            clientThread = threading.Thread(target = self.client_thread, args = (clientsocket, data[0], data[1], data[2], data[3]))
             clientThread.start()
         #end of code added by Anna
 
-    def client_thread(self, clientsocket, ip, port):
+    def client_thread(self, clientsocket, client_id, command, ip, port):
         ##############################################################################
         # TODO:  This function should handle the incoming connection requests from   #
         #        clients. You are free to add more arguments to this function based  #
@@ -62,18 +65,16 @@ class p2pbootstrapper:
         #code added by Anna Gardner
         #clientsocket.send(pickle.dumps(clientsocket))
         while True :
-            data = pickle.loads(clientsocket.recv(1024))
-            data_arr = data.split(" ")
-            data = data_arr[0]
-            print("boostrapper data: "+data)
+            data = command
+            #data_arr = data.split(" ")
+            #data = data_arr[0]
+            #print("boostrapper data: "+data)
             if data :
                 if data == 'deregister' :
                 #here compare if string sent indicates that client wants to disconnect
-                    self.deregister_client(clientsocket)
+                    self.deregister_client(client_id)
                 elif data == 'register' :
                     #client_id = pickle.loads(clientsocket.recv(1024))
-                    client_id = data_arr[1]
-                    port_num = data_arr[2]
                     #if not client_id:
                     #    break
                     self.register_client(client_id, ip, port_num)
@@ -124,7 +125,7 @@ class p2pbootstrapper:
         # TODO:  Start timer for all clients so clients can start performing their   #
         #        actions                                                             #
         ##############################################################################
-        print(json.dumps(clients))
-        for client in self.clients:
-            client.start()
+        print(json.dumps(self.clients))
+        #for client in self.clients:
+            #client.start()
 

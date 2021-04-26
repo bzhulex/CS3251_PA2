@@ -129,7 +129,8 @@ class p2pclient:
         while True:
             # accept connections from outside
             (clientsocket, (ip, port)) = self.socket.accept()
-
+            data = pickle.loads(self.bootstrapperSocket.recv(1024))
+            data = "START"
             clientThread = threading.Thread(target = self.client_thread, args = (clientsocket, ip, port))
             clientThread.start()
         #end of code added by Anna
@@ -169,7 +170,7 @@ class p2pclient:
             register_dict["text"] = str("Client ID" +str(self.client_id)+"registered")
             self.log.append(register_dict)
 
-        self.bootstrapperSocket.send(pickle.dumps('register '+str(self.client_id)+' '+str(self.port)))
+        self.bootstrapperSocket.send(pickle.dumps(str(self.client_id) + ' register '+ str(ip) +' '+str(self.port)))
         #print("p2pclient client_id: "+str(self.client_id))
         #self.bootstrapperSocket.send(pickle.dumps(self.client_id))
 
@@ -180,7 +181,7 @@ class p2pclient:
         # TODO:  Deregister with the bootstrapper                                    #
         #        Append an entry to self.log that deregistration is successful       #
         ##############################################################################
-        self.bootstrapperSocket.send(pickle.dumps('deregister'))
+        self.bootstrapperSocket.send(pickle.dumps(str(self.client_id) + ' deregister '+ str(ip) +' '+str(self.port)))
         dereg_dict = {}
         dereg_dict["time"] = curr_time
         dereg_dict["text"] = Unregistered
@@ -243,7 +244,7 @@ class p2pclient:
         print("     start query_bootstrapper_all_clients")
         while self.status == Status.INITIAL:
             pass
-        self.bootstrapperSocket.send(pickle.dumps('sendList'))
+        self.bootstrapperSocket.send(pickle.dumps(str(self.client_id) + ' sendList '+ '127.0.0.1' +' '+str(self.port)))
         print("     sendList flag sent")
         toReturn = pickle.loads(self.bootstrapperSocket.recv(1024)).copy()
         print("     query all clients "+json.dumps(toReturn))

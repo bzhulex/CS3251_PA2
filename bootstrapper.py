@@ -12,7 +12,7 @@ if __name__ == "__main__":
     ##############################################################################
     bootst = p2pbootstrapper()
     print("before start listening")
-    listenThread = threading.Thread(target = bootst.start_listening(), args = ())
+    listenThread = threading.Thread(target = bootst.start_listening, args = ())
     listenThread.start()
     print("after start listening")
     time.sleep(5)

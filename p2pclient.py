@@ -254,6 +254,25 @@ class p2pclient:
         json.dump(self.log, outfile)
         outfile.close()
 
+    def clean_client_list(self, toReturn):
+        count  = 0
+        var = '<'
+        for client in toReturn:
+            var += '<'
+            for i in range(len(client)):
+                piece = client[i]
+                if i < len(client) - 1:
+                    var += str(piece)+', '
+                else:
+                    var += str(piece)
+                i += 1 
+            if count < len(toReturn) - 1:
+                var += ">, "
+            else:
+                var += ">"
+            count += 1
+        var += '>'
+        return var    
 
     def query_bootstrapper_all_clients(self, curr_time, ip='127.0.0.1', port=8888):
         ##############################################################################
@@ -278,22 +297,7 @@ class p2pclient:
         toReturn = json.loads(data)
         
         count  = 0
-        var = '<'
-        for client in toReturn:
-            var += '<'
-            for i in range(len(client)):
-                piece = client[i]
-                if i < len(client) - 1:
-                    var += str(piece)+', '
-                else:
-                    var += str(piece)
-                i += 1 
-            if count < len(toReturn) - 1:
-                var += ">, "
-            else:
-                var += ">"
-            count += 1
-        var += '>'
+        var = self.clean_client_list(toReturn)
         q_dict = {}
         q_dict['time'] = curr_time
         q_dict['text'] = "Bootstrapper "+var
@@ -311,19 +315,20 @@ class p2pclient:
         port = 0
         for client in all_clients:
             if client[0] == client_id:
-                right_client = client
                 ip = client[1]
                 port = client[2]
-
-        #(ip, port) = self.knownClients.get(client_id)
-        # clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # clientSocket.connect((ip, port))
-        # clientSocket.send(pickle.dumps('knownClientsPlease'))
-        # knownClientsDict = pickle.loads(clientSocket.recv(1024))
-        q_dict = {}
-        q_dict["time"] = curr_time
-        q_dict["text"] = str("Client "+str(client_id)+": ")
-        self.log.append(q_dict)
+        if ip:        
+            (ip, port) = self.knownClients.get(client_id)
+            clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            clientSocket.connect((ip, port))
+            clientSocket.send('knownClientsPlease'.encode('utf-8'))
+            toReturn = clientSocket.recv(1024).decode('utf-8')
+            var = self.clean_client_list(toReturn)
+            q_dict = {}
+            q_dict["time"] = curr_time
+            q_dict["text"] = str("Client "+str(client_id)+": "+var)
+            print("     query all clients id: "+str(self.client_id)+ " "+var)
+            self.log.append(q_dict)
         # return knownClientsDict
 
 

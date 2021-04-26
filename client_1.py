@@ -1,5 +1,7 @@
 from p2pclient import p2pclient
 import json
+import time
+import threading
 
 if __name__ == "__main__":
     content = None
@@ -19,13 +21,12 @@ if __name__ == "__main__":
     #        the p2pclient below                                                 #
     ##############################################################################
     #Brian's code
-    time.sleep(2)
+    #time.sleep(2)
     with open('1.json') as f:
         client_1 = json.load(f)
 
     content = client_1['content']
     actions = client_1['actions']
-
     client = p2pclient(client_id=1, content=content, actions=actions)
 
     ##############################################################################
@@ -38,7 +39,8 @@ if __name__ == "__main__":
     ##############################################################################
     # TODO: For step 4: call clients.start_listening()                           #
     ##############################################################################
-    client.start_listening()
+    clientListenThread = threading.Thread(target = client.start_listening, args = ())
+    clientListenThread.start()
     ##############################################################################
     # For step 5: the bootstrapper will call the start() on this client, which  #
     # will make this client start taking its actions.                            #

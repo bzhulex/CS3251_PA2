@@ -91,10 +91,10 @@ class p2pclient:
         #        https://docs.python.org/3/howto/sockets.html on how to do this.     #
         ##############################################################################
 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.p2pclientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         random.seed(client_id)
         self.port = random.randint(9000, 9999)
-        self.socket.bind(('127.0.0.1', self.port))
+        self.p2pclientsocket.bind(('127.0.0.1', self.port))
 
         ##############################################################################
         # TODO:  Register with the bootstrapper by calling the 'register' function   #
@@ -116,7 +116,7 @@ class p2pclient:
         #        Feel free to add more states if you need to                         #
         #        HINT: You may find enum datatype useful                             #
         ##############################################################################
-        self.start()
+        #self.start()
         
 
     def start_listening(self):
@@ -128,10 +128,12 @@ class p2pclient:
         #        client_thread function below) to handle the requested action.       #
         ##############################################################################
         #code added by Anna Gardner
-        self.socket.listen()
+        self.p2pclientsocket.listen()
         while True:
             # accept connections from outside
-            (clientsocket, (ip, port)) = self.socket.accept()
+            print('listening')
+            (clientsocket, (ip, port)) = self.p2pclientsocket.accept()
+            print('accepted')
             #print("     client ip and port "+ip + " " + str(port))
             clientThread = threading.Thread(target = self.client_thread, args = (clientsocket, ip, port))
             clientThread.start()
@@ -153,7 +155,9 @@ class p2pclient:
             #O, S, M commands
             #hint stuff
             if data :
-                if data == "START":
+                data = data.replace('"', '')
+                if data == 'START':
+                    print('start was called')
                     self.start()
                 if data == 'knownClientsPlease' :
                 #here compare if string sent indicates that client wants to disconnect
@@ -168,19 +172,20 @@ class p2pclient:
         #        port that this client is running on to the bootstrapper.            #
         #        Append an entry to self.log that registration is successful         #
         ##############################################################################
-        if self.status == Status.INITIAL:
-            bootstrapperSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            bootstrapperSocket.connect((ip, port))
+        #if self.status == Status.INITIAL:
+        bootstrapperSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print('trying to connect')
+        bootstrapperSocket.connect((ip, port))
             #data = pickle.loads(clientsocket.recv())
             #self.client_id = data
-            toSend = str(str(self.client_id) + ' register '+ str(ip) +' '+str(self.port))
-            bootstrapperSocket.send(json.dumps(toSend).encode('utf-8'))
-            bootstrapperSocket.close()
-            if curr_time != 0:
-                register_dict = {}
-                register_dict["time"] = self.curr_time
-                register_dict["text"] = str("Client ID " +str(self.client_id)+" registered")
-                self.log.append(register_dict)
+        toSend = str(str(self.client_id) + ' register '+ str(ip) +' '+str(self.port))
+        bootstrapperSocket.send(json.dumps(toSend).encode('utf-8'))
+        bootstrapperSocket.close()
+        if curr_time != 0:
+            register_dict = {}
+            register_dict["time"] = curr_time
+            register_dict["text"] = str("Client ID " +str(self.client_id)+" registered")
+            self.log.append(register_dict)
     
 
     def deregister(self, curr_time, ip='127.0.0.1', port=8888):
@@ -218,14 +223,12 @@ class p2pclient:
         # come handy.                                                                #
         ##############################################################################
         
-        #set time to zero
         start = time.time()
         action_num = 0
         while action_num < len(self.actions):
             time_diff = time.time() - start
             
             if self.actions[action_num]["time"] < time_diff:
-            #perform action -> somehow parse it from this actions input
                 curr_time = self.actions[action_num]["time"] 
                 #print("ACTION NUM: "+str(action_num) + "CURR TIME " + str(curr_time))
                 code = self.actions[action_num]["code"]
@@ -347,11 +350,11 @@ class p2pclient:
         # return knownContentList
 
 
-    def return_content_list(self, curr_time):
+    def return_content_list(self):
         ##############################################################################
         # TODO:  Return the content list that you have (self.content)                #
         ##############################################################################
-        pass
+        return self.content.copy()
         # col = [i[0] for i in self.content_originator_list]
         # temp = [i for i in self.content if i in col ]
         # return self.content_originator_list.copy()
@@ -416,7 +419,7 @@ class p2pclient:
         # TODO:  Delete the content from your content list                                                  #
         #        Append an entry to self.log that content is purged                                         #
         #####################################################################################################
-        # self.content.remove(content_id)
         purge_dict = {}
+        self.content = purge_dict
         purge_dict["time"] = curr_time
         purge_dict["text"] = str("Removed "+str(content_id))

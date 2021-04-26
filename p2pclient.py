@@ -179,7 +179,7 @@ class p2pclient:
             #data = pickle.loads(clientsocket.recv())
             #self.client_id = data
         toSend = str(str(self.client_id) + ' register '+ str(ip) +' '+str(self.port))
-        bootstrapperSocket.send(json.dumps(toSend).encode('utf-8'))
+        bootstrapperSocket.send(toSend.encode('utf-8'))
         bootstrapperSocket.close()
         if curr_time != 0:
             register_dict = {}
@@ -198,7 +198,7 @@ class p2pclient:
         toSend = str(str(self.client_id) + ' deregister '+ str(ip) +' '+str(self.port))
         # var = struct.pack('i', len(toSend))
         # self.bootstrapperSocket.send(var)
-        bootstrapperSocket.send(json.dumps(toSend).encode('utf-8'))
+        bootstrapperSocket.send(toSend.encode('utf-8'))
         bootstrapperSocket.close()
         dereg_dict = {}
         dereg_dict["time"] = curr_time
@@ -269,7 +269,7 @@ class p2pclient:
         toSend = str(str(self.client_id) + ' sendList '+ '127.0.0.1' +' '+str(self.port))
         # var = struct.pack('i', len(toSend))
         # self.bootstrapperSocket.send(var)
-        bootstrapperSocket.send(json.dumps(toSend).encode('utf-8'))
+        bootstrapperSocket.send(toSend.encode('utf-8'))
         #print("     sendList flag sent")
         # length = self.bootstrapperSocket.recv(4)
         # length_hdr = struct.unpack('i', length)[0]

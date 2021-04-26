@@ -90,7 +90,7 @@ class p2pclient:
         #        Refer to                                                            #
         #        https://docs.python.org/3/howto/sockets.html on how to do this.     #
         ##############################################################################
-
+        time.sleep(.1)
         self.p2pclientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         random.seed(client_id)
         self.port = random.randint(9000, 9999)
@@ -104,6 +104,7 @@ class p2pclient:
         self.status = Status.INITIAL
         self.register(0)
         self.status = Status.REGISTERED
+
         #register may need to be adjusted here to make sure the server calls the client by the correct id?
         # data = pickle.loads(self.bootstrapperSocket.recv(1024))
         # if data == 'START':
@@ -226,7 +227,7 @@ class p2pclient:
         action_num = 0
         while action_num < len(self.actions):
             time_diff = time.time() - start
-            
+            #print("~~~~~~TYPE self.actions[action_num]: "+str(type(self.actions[action_num])))
             if self.actions[action_num]["time"] < time_diff:
                 curr_time = self.actions[action_num]["time"] 
                 #print("ACTION NUM: "+str(action_num) + "CURR TIME " + str(curr_time))
@@ -275,17 +276,28 @@ class p2pclient:
         data = bootstrapperSocket.recv(1048).decode('utf-8')
         bootstrapperSocket.close()
         toReturn = json.loads(data)
-        #print("     query all clients "+json.dumps(toReturn))
+        
+        count  = 0
         var = '<'
         for client in toReturn:
             var += '<'
-            for piece in client:
-                var += str(piece)+','
-            var += ">"
+            for i in range(len(client)):
+                piece = client[i]
+                if i < len(client) - 1:
+                    var += str(piece)+', '
+                else:
+                    var += str(piece)
+                i += 1 
+            if count < len(toReturn) - 1:
+                var += ">, "
+            else:
+                var += ">"
+            count += 1
         var += '>'
         q_dict = {}
         q_dict['time'] = curr_time
         q_dict['text'] = "Bootstrapper "+var
+        print("     query all clients id: "+str(self.client_id)+ " "+var)
         self.log.append(q_dict)
         return toReturn
 

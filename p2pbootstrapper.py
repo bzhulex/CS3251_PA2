@@ -39,7 +39,7 @@ class p2pbootstrapper:
         ##############################################################################
 
         #code added by Anna Gardner
-        self.boots_socket.listen()
+        self.boots_socket.listen(5)
         while True:
             # accept connections from outside
             (clientsocket, (ip, port)) = self.boots_socket.accept()
@@ -87,8 +87,9 @@ class p2pbootstrapper:
                     self.register_client(client_id, ip, port, clientsocket)
                 elif data == 'sendList':
                     #print("bootstrapper sendlist")
-                    client_list = self.return_clients() 
-                    toSend = json.dumps(client_list)
+                    client_list = self.return_clients()
+                    sorted_list = sorted(client_list, key=lambda x: x[0]) 
+                    toSend = json.dumps(sorted_list)
                         # var = struct.pack('i', len(toSend))
                         # clientsocket.send(var)
                     clientsocket.send(toSend.encode('utf-8'))
@@ -145,7 +146,7 @@ class p2pbootstrapper:
         for client in self.clients:
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.connect((client[1], int(client[2])))
-            client_socket.send(json.dumps('START').encode('utf-8'))
+            client_socket.send('START'.encode('utf-8'))
         #     print("connection successfull "+str(client_socket.getsockname()[1]))
         #     client_socket.send(json.dumps("START").encode('utf-8'))
         #     print("send start successfull")

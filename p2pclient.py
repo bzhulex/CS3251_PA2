@@ -174,7 +174,6 @@ class p2pclient:
         ##############################################################################
         #if self.status == Status.INITIAL:
         bootstrapperSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print('trying to connect')
         bootstrapperSocket.connect((ip, port))
             #data = pickle.loads(clientsocket.recv())
             #self.client_id = data

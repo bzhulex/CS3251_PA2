@@ -1,1 +1,1 @@
-"[{\"time\": 3, \"text\": \"Unregistered\"}, {\"time\": \"3\", \"text\": \"Bootstrapper <<1,127.0.0.1,9137,><2,127.0.0.1,9978,>>\"}, {\"time\": 8, \"text\": \"Bootstrapper <<1,127.0.0.1,9137,><2,127.0.0.1,9978,>>\"}]"
+"[{\"time\": 3, \"text\": \"Unregistered\"}, {\"time\": \"3\", \"text\": \"Bootstrapper <>\"}, {\"time\": 8, \"text\": \"Bootstrapper <>\"}]"

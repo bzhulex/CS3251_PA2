@@ -26,7 +26,6 @@ class p2pbootstrapper:
         #code added by Anna Gardner
         self.boots_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.boots_socket.bind((ip, port))
-        #self.start_listening()
         #end of code added by Anna
 
 
@@ -121,13 +120,14 @@ class p2pbootstrapper:
         ##############################################################################
         # TODO:  Delete client from self.clients                                     #
         ##############################################################################
-        # self.mutex.acquire()
-        # self.clients.pop(client_id)
-        # self.mutex.release()
+        self.mutex.acquire()
+        for client in self.clients:
+            if client[0] == client_id:
+                self.clients.remove(client)
+        self.mutex.release()
 
-        # print("boostrapper clients deregister")
-        # print("     "+json.dumps(self.clients))
-        pass
+        print("boostrapper clients deregister")
+        print("     "+json.dumps(self.clients))
 
     def return_clients(self):
         ##############################################################################

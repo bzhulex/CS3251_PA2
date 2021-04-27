@@ -75,7 +75,7 @@ class p2pclient:
         #self.curr_time = 1
 
         self.content_originator_list = None  # This needs to be kept None here, it will be built eventually
-        self.clients = []
+        self.clients = set()
 
         # 'log' variable is used to record the series of events that happen on the client
         # Empty list for now, update as we take actions
@@ -164,9 +164,8 @@ class p2pclient:
                     print('start was called')
                     self.start()
                 if data == 'knownClientsPlease' :
-                    client_list = self.return_list_of_known_clients()
-                    sorted_list = sorted(client_list, key=lambda x: x[0]) 
-                    toSend = json.dumps(sorted_list)
+                    client_list = self.return_list_of_known_clients() 
+                    toSend = json.dumps(client_list)
                     clientsocket.send(toSend.encode('utf-8'))
                 elif data == 'contentList' :
                     client_list = self.return_content_list()
@@ -341,48 +340,8 @@ class p2pclient:
             q_dict = {}
             q_dict['time'] = curr_time
             q_dict['text'] = "Client " + str(client_id) + ": " + newestData
-            #print("     query all clients id: "+str(self.client_id)+ " "+var)
             self.log.append(q_dict)
             return clientDataToList
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        # all_clients = self.query_bootstrapper_all_clients(curr_time)
-        # ip = None
-        # port = 0
-        # for client in all_clients:
-        #     if client[0] == client_id:
-        #         ip = client[1]
-        #         port = client[2]
-        # if ip:        
-        #     (ip, port) = self.knownClients.get(client_id)
-        #     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #     clientSocket.connect((ip, port))
-        #     clientSocket.send('knownClientsPlease'.encode('utf-8'))
-        #     toReturn = clientSocket.recv(1024).decode('utf-8')
-        #     var = self.clean_client_list(toReturn)
-        #     q_dict = {}
-        #     q_dict["time"] = curr_time
-        #     q_dict["text"] = str("Client "+str(client_id)+": "+var)
-        #     print("     query all clients id: "+str(self.client_id)+ " "+var)
-        #     self.log.append(q_dict)
-        # return knownClientsDict
-
 
     def return_list_of_known_clients(self):
         ##############################################################################
@@ -390,8 +349,6 @@ class p2pclient:
         #        HINT: You could make a set of <IP, Port> from self.content_originator_list #
         #        and return it.                                                      #
         ##############################################################################
-        #could iterate over content originator list adn get ip and port numbers
-        #return self.knownClients.copy()
         return self.clients.copy()
 
     def query_client_for_content_list(self, client_id, curr_time):
@@ -443,7 +400,9 @@ class p2pclient:
         #        their responses(hints, if present) appropriately in the self.content_originator_list       #
         #        Append an entry to self.log that content is obtained                                       #
         #####################################################################################################
-        #bootstrapperClients = self.query_bootstrapper_all_clients
+        # bootstrapperClients = self.query_bootstrapper_all_clients
+        # for client in bootstrapperClients:
+        #     self.clients
         
         
         

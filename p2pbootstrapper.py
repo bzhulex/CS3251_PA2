@@ -147,6 +147,9 @@ class p2pbootstrapper:
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.connect((client[1], int(client[2])))
             client_socket.send('START'.encode('utf-8'))
+
+            toSend = str(str(20) + ' START '+ '127.0.0.1' +' '+str(8888))
+            client_socket.send(toSend.encode('utf-8'))
         #     print("connection successfull "+str(client_socket.getsockname()[1]))
         #     client_socket.send(json.dumps("START").encode('utf-8'))
         #     print("send start successfull")

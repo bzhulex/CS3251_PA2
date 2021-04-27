@@ -114,21 +114,26 @@ class p2pbootstrapper:
         #self.connections.append(clientsocket)
         self.mutex.release()
 
-        print("boostrapper clients")
+        print("boostrapper clients register "+client_id)
         print("     "+json.dumps(self.clients))
 
     def deregister_client(self, client_id):
         ##############################################################################
         # TODO:  Delete client from self.clients                                     #
         ##############################################################################
-        self.mutex.acquire()
-        for client in self.clients:
-            if client[0] == client_id:
-                self.clients.remove(client)
-        self.mutex.release()
+        # self.mutex.acquire()
+        # i = 0
+        # to_remove = 0
+        # for client in self.clients:
+        #     if client[0] == client_id:
+        #         to_remove = i
+        #     i += 1
+        # self.clients.pop(to_remove)
+        # self.mutex.release()
 
-        print("boostrapper clients deregister")
-        print("     "+json.dumps(self.clients))
+        # print("boostrapper clients deregister "+client_id)
+        # print("     "+json.dumps(self.clients))
+        pass
 
     def return_clients(self):
         ##############################################################################
@@ -142,11 +147,11 @@ class p2pbootstrapper:
         # TODO:  Start timer for all clients so clients can start performing their   #
         #        actions                                                             #
         ##############################################################################
-        print("all clients " + json.dumps(self.clients))
+        #print("all clients " + json.dumps(self.clients))
         for client in self.clients:
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client_socket.connect((client[1], int(client[2])))
-            client_socket.send('START'.encode('utf-8'))
+            #client_socket.send('START'.encode('utf-8'))
 
             toSend = str(str(20) + ' START '+ '127.0.0.1' +' '+str(8888))
             client_socket.send(toSend.encode('utf-8'))

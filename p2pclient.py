@@ -75,7 +75,7 @@ class p2pclient:
         #self.curr_time = 1
 
         self.content_originator_list = None  # This needs to be kept None here, it will be built eventually
-        self.clients = set()
+        self.content_originator_list = []
 
         # 'log' variable is used to record the series of events that happen on the client
         # Empty list for now, update as we take actions
@@ -156,7 +156,7 @@ class p2pclient:
             if data:
                 #print("bootstrapper data " +data[0])
                 data_arr = data.split(" ")
-                client_id = data_arr[0]
+                #client_id = data_arr[0]
                 data = data_arr[1]
                 ip = data_arr[2]
                 port = data_arr[3]
@@ -235,25 +235,26 @@ class p2pclient:
         while action_num < len(self.actions):
             time_diff = time.time() - start
             #print("~~~~~~TYPE self.actions[action_num]: "+str(type(self.actions[action_num])))
-            if self.actions[action_num]["time"] < time_diff:
-                curr_time = self.actions[action_num]["time"] 
-                #print("ACTION NUM: "+str(action_num) + "CURR TIME " + str(curr_time))
-                code = self.actions[action_num]["code"]
-                if code == "R":
-                    self.register(curr_time)
-                elif code == "U":
-                    self.deregister(curr_time)
-                elif code == "Q":
-                    self.request_content(self.actions[action_num]["content_id"], curr_time)
-                elif code == "P":
-                    self.purge_content(self.actions[action_num]["content_id"], curr_time)    
-                elif code == "O":
-                    self.query_client_for_known_client(self.actions[action_num]["client_id"], curr_time)
-                elif code == "M":
-                    self.query_client_for_content_list(self.actions[action_num]["client_id"], curr_time)
-                elif code == "L":
-                    self.query_bootstrapper_all_clients(curr_time)
-                action_num += 1
+            while self.actions[action_num]["time"] < time_diff:
+                pass
+            curr_time = self.actions[action_num]["time"] 
+            #print("ACTION NUM: "+str(action_num) + "CURR TIME " + str(curr_time))
+            code = self.actions[action_num]["code"]
+            if code == "R":
+                self.register(curr_time)
+            elif code == "U":
+                self.deregister(curr_time)
+            elif code == "Q":
+                self.request_content(self.actions[action_num]["content_id"], curr_time)
+            elif code == "P":
+                self.purge_content(self.actions[action_num]["content_id"], curr_time)    
+            elif code == "O":
+                self.query_client_for_known_client(self.actions[action_num]["client_id"], curr_time)
+            elif code == "M":
+                self.query_client_for_content_list(self.actions[action_num]["client_id"], curr_time)
+            elif code == "L":
+                self.query_bootstrapper_all_clients(curr_time)
+            action_num += 1
             
                 
         string = "client_" + str(self.client_id) + ".json"
@@ -317,7 +318,8 @@ class p2pclient:
         #        Append an entry to self.log                                         #
         ##############################################################################
         correctClient = []
-        for client in self.clients:
+        clientDataToList = []
+        for client in self.return_list_of_known_clients():
             if int(client[0]) == client_id:
                 correctClient = client
         while self.status == Status.INITIAL:
@@ -341,7 +343,7 @@ class p2pclient:
             q_dict['time'] = curr_time
             q_dict['text'] = "Client " + str(client_id) + ": " + newestData
             self.log.append(q_dict)
-            return clientDataToList
+        return clientDataToList
 
     def return_list_of_known_clients(self):
         ##############################################################################
@@ -349,7 +351,13 @@ class p2pclient:
         #        HINT: You could make a set of <IP, Port> from self.content_originator_list #
         #        and return it.                                                      #
         ##############################################################################
-        return self.clients.copy()
+        clients = {}
+        returnClients = []
+        for content in self.content_originator_list:
+            clients.update({content[1]: (content[2], content[3])})
+        for client in clients:
+            returnClients.append((client[0], client[1], client[2]))
+        return returnClients
 
     def query_client_for_content_list(self, client_id, curr_time):
         ##############################################################################
@@ -357,7 +365,7 @@ class p2pclient:
         #        Append an entry to self.log                                         #
         ##############################################################################
         correctClient = []
-        for client in self.clients:
+        for client in self.return_list_of_known_clients():
             if int(client[0]) == client_id:
                 correctClient = client
         while self.status == Status.INITIAL:
@@ -400,60 +408,24 @@ class p2pclient:
         #        their responses(hints, if present) appropriately in the self.content_originator_list       #
         #        Append an entry to self.log that content is obtained                                       #
         #####################################################################################################
-        # bootstrapperClients = self.query_bootstrapper_all_clients
-        # for client in bootstrapperClients:
-        #     self.clients
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        #do .sends in here
-        #go though each client and send the content id
-        #   each client will check in it's own content for the content ID
-        #   if not each clinet will check its COL 
-        #   if none of that send a NO
-        #   if you get a NO go to next client
-        #   if you get a hint then jump to next client
-        #   when tou get the data log it an append 
-        # bootstrapperClients = self.query_bootstrapper_all_clients()
-        # for client in bootstrapperClients:
-        #     self.knownClients.update({client, bootstrapperClients.get(client)})
-        # for client in bootstrapperClients:
-        #     clientContentList = self.query_client_for_content_list(client)
-        #     for content in clientContentList:
-        #         if content == content_id:
-        #             self.content.append(content_id)
-        #             self.content_originator_list.update({content_id: self.knownClients.get(client)})
-        #             q_dict = {}
-        #             q_dict["time"] = self.curr_time
-        #             q_dict["text"] = str("Obtained "+str(content_id)+" from "+str(self.knownClients.get(client)))
-        #             self.log.append(q_dict)
-        #             return
-        # for client in bootstrapperClients:
-        #     clientKnownContacts = self.query_client_for_known_client(client)
-        #     for clientclient in clientKnownContacts:
-        #         if self.knownClients.get(client) == None :
-        #             self.knownClients.update({clientclient: clientKnownContacts.get(clientclient)})
-        #             clientclientContentList = self.query_client_for_content_list(clientclient)
-        #             for contentboi in clientclientContentList:
-        #                 if contentboi == content_id:
-        #                     self.content.append(content_id)
-        #                     self.content_originator_list.update({content_id: self.knownClients.get(clientclient)})
-        #                     q_dict = {}
-        #                     q_dict["time"] = self.curr_time
-        #                     q_dict["text"] = str("Obtained "+str(content_id)+" from "+str(self.knownClients.get(client)))
-        #                     self.log.append(q_dict)
-        #                     return
+        #do we need to keep bootstrapper_all_clients etc from logging? if so how?
+        correctContentClient = ["1","IP","Port"]
+        bootstrapperClients = self.query_bootstrapper_all_clients(curr_time)
+        for client in bootstrapperClients:
+            if int(client[0]) != self.client_id:
+                contentList = self.query_client_for_content_list(int(client[0]),curr_time)
+                for content in contentList:
+                    self.content_originator_list.append((content, client[0], client[1], client[2]))
+                    if content == content_id:
+                        correctContentClient = client
+
+
+
+
         q_dict = {}
         q_dict["time"] = curr_time
-        q_dict["text"] = str("Obtained "+str(content_id)+" from <IP>#<Port>")
+        q_dict["text"] = str("Obtained "+str(content_id)+" from " + correctContentClient[1] + "#" + correctContentClient[2])
         self.log.append(q_dict)
        
 
